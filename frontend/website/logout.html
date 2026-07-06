@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logout — RECYNT AI</title>
+<link rel="icon" type="image/png" href="image/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #05100b;
+  --bg-panel: #0a1a12;
+  --bg-card: #10241a;
+  --border-line: #1c3527;
+  --accent: #39ff9e;
+  --accent-dim: #1fcc7a;
+  --accent-soft: rgba(57, 255, 158, 0.12);
+  --accent-on: #04150c;
+  --text-hi: #eaf5ee;
+  --text-mid: #93ab9e;
+  --text-low: #52685c;
+  --danger: #ff6b6b;
+  --danger-soft: rgba(255, 107, 107, 0.12);
+  --grid-line: rgba(57, 255, 158, 0.035);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  color-scheme: dark;
+}
+
+/* Palet terang — dipakai otomatis saat dashboard.html / scan.html
+   disetel ke mode terang (disimpan di localStorage key 'recynt-theme') */
+:root[data-theme="light"] {
+  --bg-deep: #f5faf7;
+  --bg-panel: #ffffff;
+  --bg-card: #eef6f0;
+  --border-line: #d7e7dc;
+  --accent: #0fa968;
+  --accent-dim: #0c8a55;
+  --accent-soft: rgba(15, 169, 104, 0.1);
+  --accent-on: #04150c;
+  --text-hi: #0b1f14;
+  --text-mid: #52685c;
+  --text-low: #86988d;
+  --grid-line: rgba(15, 169, 104, 0.05);
+
+  color-scheme: light;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-hi);
+  font-family: var(--font-display);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 42px 42px;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; border: none; }
+img { max-width: 100%; display: block; }
+
+.container { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+
+.main-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+}
+.eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.panel {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-lg);
+  padding: 40px 34px;
+  text-align: center;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+/* brand (dipakai di panel logout & footer, sinkron dengan index.html) */
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.brand-mark img { width: 100%; height: 100%; object-fit: cover; }
+.brand-text, .brand > div:not(.brand-mark) { text-align: left; }
+.brand-name { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+.brand-sub { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.14em; color: var(--accent-dim); }
+
+.status-icon {
+  width: 70px;
+  height: 70px;
+  margin: 22px auto 20px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  animation: pop .4s ease;
+}
+@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+h1 { font-size: 22px; margin-bottom: 10px; letter-spacing: -0.01em; }
+.sub { color: var(--text-mid); font-size: 14px; margin-bottom: 26px; }
+
+.countdown {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-low);
+  margin-bottom: 22px;
+}
+.countdown b { color: var(--accent); }
+
+.btn {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 13px 22px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color .15s, color .15s;
+}
+.btn-primary { background: var(--accent); color: var(--accent-on); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-soft); }
+
+.progress-track {
+  height: 4px;
+  background: var(--bg-card);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 22px;
+  border: 1px solid var(--border-line);
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+  width: 100%;
+  transform-origin: left;
+  animation: shrink 4s linear forwards;
+}
+@keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* ---------------- Footer (identik dengan index.html) ---------------- */
+footer { border-top: 1px solid var(--border-line); padding: 50px 0 30px; }
+.footer-grid { display: flex; justify-content: center; margin-bottom: 34px; }
+
+.footer-utility {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 22px 0;
+  border-top: 1px solid var(--border-line);
+  border-bottom: 1px solid var(--border-line);
+}
+
+.clock-widget {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-dim);
+  padding: 8px 14px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.clock-widget .clock-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.4s infinite; flex-shrink: 0; }
+.clock-widget .clock-date { color: var(--text-mid); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--text-low);
+  padding-top: 22px;
+  font-family: var(--font-mono);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.made-with {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-low);
+  padding: 18px 0 4px;
+  text-align: center;
+}
+.made-with svg { flex-shrink: 0; }
+.made-with .nodejs-mark { color: #5FA04E; }
+.made-with .code-tag {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-dim);
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 0 20px; }
+}
+@media (max-width: 560px) {
+  .footer-bottom { flex-direction: column; text-align: center; }
+  .brand-sub { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="main-wrap">
+  <div class="panel">
+    <div class="brand">
+      <div class="brand-mark"><img src="image/logo.png" alt="RECYNT AI Logo"></div>
+      <div>
+        <div class="brand-name">RECYNT AI</div>
+        <div class="brand-sub">WASTE DETECTION SYSTEM</div>
+      </div>
+    </div>
+
+    <span class="eyebrow">SESI DIAKHIRI</span>
+
+    <div class="status-icon">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </div>
+
+    <h1>Berhasil logout</h1>
+    <p class="sub">Sesi Anda telah diakhiri dengan aman. Sampai jumpa lagi di RECYNT AI.</p>
+
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="countdown">Mengalihkan ke halaman login dalam <b id="counter">4</b> detik...</div>
+
+    <a href="login.html" class="btn btn-primary">Kembali ke Login Sekarang</a>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="brand" style="margin-bottom:0">
+        <div class="brand-mark"><img src="image/logo.png" alt="RECYNT AI Logo"></div>
+        <div>
+          <div class="brand-name">RECYNT AI</div>
+          <div class="brand-sub">WASTE DETECTION SYSTEM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-utility">
+      <div class="clock-widget" id="clockWidget">
+        <span class="clock-dot"></span>
+        <span class="clock-date" id="clockDate">—</span>
+        <span class="clock-time" id="clockTime">--:--:--</span>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2026 RECYNT AI — Tim Satu Asa, Politeknik Negeri Medan</span>
+      <span>Recycle Intelligent Waste Detection System</span>
+    </div>
+    <div class="made-with">
+      <span>Dibuat dengan</span>
+      <svg class="nodejs-mark" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.85c-.27 0-.55.07-.78.2L3.78 6.32c-.48.28-.78.8-.78 1.36v9.24c0 .56.3 1.08.78 1.36l2.15 1.24c1.04.51 1.42.51 1.9.51 1.56 0 2.45-.94 2.45-2.59V8.5c0-.13-.11-.24-.24-.24h-1.02c-.13 0-.24.11-.24.24v8.94c0 .73-.76 1.46-2 .83l-2.24-1.3a.26.26 0 01-.13-.22V7.68c0-.09.05-.18.13-.22l7.44-4.27a.25.25 0 01.25 0l7.44 4.27c.08.04.13.13.13.22v8.87c0 .09-.05.17-.13.22l-7.44 4.28a.26.26 0 01-.25 0l-1.9-1.13c-.06-.03-.14-.04-.19-.01-.53.3-.63.34-1.13.51-.12.04-.3.11.07.32l2.48 1.47c.24.14.51.21.79.21s.55-.07.78-.2l7.44-4.28c.48-.28.78-.8.78-1.36V7.68c0-.56-.3-1.08-.78-1.36l-7.44-4.27a1.6 1.6 0 00-.78-.2z"/><path d="M14.28 13.15c-1.99 0-2.4-.55-2.53-1.55a.24.24 0 00-.24-.21h-1.06c-.13 0-.24.1-.24.24 0 1.28.7 2.81 3.99 2.81 2.4 0 3.78-.93 3.78-2.55 0-1.6-1.08-2.03-3.36-2.33-2.3-.3-2.53-.46-2.53-1 0-.45.2-1.05 1.9-1.05 1.51 0 2.07.33 2.3 1.34.02.11.12.19.24.19h1.06c.07 0 .13-.03.18-.08.05-.05.07-.12.06-.19-.15-1.75-1.32-2.57-3.68-2.57-2.1 0-3.36.89-3.36 2.38 0 1.62 1.25 2.07 3.28 2.27 2.42.24 2.61.6 2.61 1.08 0 .84-.67 1.2-2.24 1.2z"/></svg>
+      <span>dan</span>
+      <span class="code-tag">&lt;/&gt;</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* =========================================================
+   RECYNT AI — Sinkronisasi tema (dark/light)
+   Membaca preferensi yang sama yang dipakai di
+   dashboard.html & scan.html (localStorage key: 'recynt-theme')
+   Dijalankan paling awal agar tidak ada "kedipan" warna saat load.
+========================================================= */
+(function () {
+  var savedTheme = localStorage.getItem('recynt-theme');
+  if (savedTheme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+
+  // Tetap sinkron kalau ada perubahan tema dari tab lain (mis. dashboard.html
+  // dibuka di tab lain lalu tema diganti) selama halaman logout masih terbuka.
+  window.addEventListener('storage', function (e) {
+    if (e.key === 'recynt-theme') {
+      if (e.newValue === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    }
+  });
+})();
+
+/* =========================================================
+   RECYNT AI — Logout Handler
+   Membersihkan sesi lokal lalu mengalihkan ke login.html
+========================================================= */
+(function () {
+  // Hapus semua data sesi yang tersimpan di browser
+  localStorage.removeItem("recynt_token");
+  localStorage.removeItem("recynt_user");
+  localStorage.removeItem("recynt_scan_count");
+
+  // (opsional) beri tahu backend kalau ada endpoint logout
+  // fetch("http://localhost:5000/api/logout", { method: "POST" }).catch(() => {});
+
+  var seconds = 4;
+  var counterEl = document.getElementById("counter");
+
+  var timer = setInterval(function () {
+    seconds -= 1;
+    if (counterEl) counterEl.innerText = seconds;
+
+    if (seconds <= 0) {
+      clearInterval(timer);
+      window.location.href = "login.html";
+    }
+  }, 1000);
+})();
+
+/* Real-time clock & date (sinkron dengan index.html) */
+function updateClock() {
+  const now = new Date();
+  const hariList = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+  const bulanList = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  const dateStr = hariList[now.getDay()] + ", " + now.getDate() + " " + bulanList[now.getMonth()] + " " + now.getFullYear();
+  const timeStr = now.toLocaleTimeString('id-ID', { hour12: false });
+  const dateEl = document.getElementById('clockDate');
+  const timeEl = document.getElementById('clockTime');
+  if (dateEl) dateEl.textContent = dateStr;
+  if (timeEl) timeEl.textContent = timeStr;
+}
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+
+</body>
+</html>

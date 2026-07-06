@@ -1,0 +1,42 @@
+# =====================================================
+# data.yaml - Konfigurasi Dataset untuk RECYNT AI
+# =====================================================
+# Letakkan file ini di root folder ai-service/ (sejajar
+# dengan main.py), lalu jalankan:
+#   yolo train data=data.yaml model=yolov8n.pt epochs=50
+#
+# Pastikan struktur folder dataset sudah sesuai:
+#   ai-service/
+#   ├── data.yaml          <- file ini
+#   └── dataset/
+#       ├── images/
+#       │   ├── train/     <- foto untuk training (mayoritas data)
+#       │   └── val/       <- foto untuk validasi (± 10-20% data)
+#       └── labels/
+#           ├── train/     <- file .txt anotasi YOLO (nama sama dg gambar)
+#           └── val/
+# =====================================================
+
+# path: folder dasar dataset (relatif terhadap lokasi file ini
+# atau terhadap direktori tempat kamu menjalankan `yolo train`)
+path: C:/Users/LE/OneDrive/Desktop/recyntai/ai-service/dataset
+
+# Lokasi folder gambar training & validasi (relatif terhadap 'path')
+train: images/train
+val: images/val
+
+# Jumlah kelas -> HARUS SAMA dengan isi tabel waste_categories di database
+nc: 5
+
+# Nama kelas -> HARUS sama persis urutan & indexnya dengan
+# angka class id yang kamu pakai saat labeling (LabelImg/CVAT).
+# Disesuaikan dengan tabel `waste_categories` (database recynt_ai):
+#   id=1 plastik, id=2 organik, id=3 kertas, id=4 logam, id=5 kaca
+# Catatan: index YOLO di bawah ini MULAI DARI 0, sedangkan id di DB
+# mulai dari 1 — jangan disamakan angkanya, cukup disamakan namanya.
+names:
+  0: plastik
+  1: organik
+  2: kertas
+  3: logam
+  4: kaca

@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>RECYNT AI — Recycle Intelligent Waste Detection System</title>
+<link rel="icon" type="image/png" href="image/logo.png">
+<link rel="fav-icon" href="image/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   RECYNT AI — Design Tokens
+   Palette (dark, default) : #05100B (bg-deep) #0A1A12 (bg-panel) #10241A (bg-card)
+              #39FF9E (accent-primary) #1FCC7A (accent-dim)
+              #E8F5EE (text-hi) #8FA89B (text-mid) #4B6156 (text-low)
+   Palette (light)          : #F5FAF7 (bg-deep) #FFFFFF (bg-panel) #EEF6F0 (bg-card)
+              #0FA968 (accent-primary) #0C8A55 (accent-dim)
+              #0B1F14 (text-hi) #52685C (text-mid) #86988D (text-low)
+   Type     : 'Space Grotesk' (display/UI), 'JetBrains Mono' (data/labels)
+========================================================= */
+
+:root {
+  --bg-deep: #05100b;
+  --bg-panel: #0a1a12;
+  --bg-card: #10241a;
+  --bg-card-hover: #142c1f;
+  --border-line: #1c3527;
+  --accent: #39ff9e;
+  --accent-dim: #1fcc7a;
+  --accent-soft: rgba(57, 255, 158, 0.12);
+  --accent-on: #04150c;
+  --text-hi: #eaf5ee;
+  --text-mid: #93ab9e;
+  --text-low: #52685c;
+  --danger: #ff6b6b;
+  --grid-line: rgba(57, 255, 158, 0.035);
+  --shadow-color: rgba(0, 0, 0, 0.35);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg-deep: #f5faf7;
+  --bg-panel: #ffffff;
+  --bg-card: #eef6f0;
+  --bg-card-hover: #e3f0e8;
+  --border-line: #d7e7dc;
+  --accent: #0fa968;
+  --accent-dim: #0c8a55;
+  --accent-soft: rgba(15, 169, 104, 0.1);
+  --accent-on: #04150c;
+  --text-hi: #0b1f14;
+  --text-mid: #52685c;
+  --text-low: #86988d;
+  --grid-line: rgba(15, 169, 104, 0.05);
+  --shadow-color: rgba(15, 40, 25, 0.1);
+
+  color-scheme: light;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-hi);
+  font-family: var(--font-display);
+  line-height: 1.5;
+  overflow-x: hidden;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 42px 42px;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+button { font-family: inherit; cursor: pointer; border: none; }
+img { max-width: 100%; display: block; }
+
+::selection { background: var(--accent); color: var(--accent-on); }
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  flex-shrink: 0;
+}
+
+/* ---------------- Buttons ---------------- */
+.btn {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 13px 26px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-soft); }
+.btn-outline {
+  background: transparent;
+  color: var(--text-hi);
+  border: 1px solid var(--border-line);
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-block { width: 100%; justify-content: center; }
+.btn-sm { padding: 10px 18px; font-size: 13px; }
+
+/* ---------------- Navbar ---------------- */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(5, 16, 11, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-line);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+:root[data-theme="light"] .navbar { background: rgba(255, 255, 255, 0.85); }
+.navbar .container {
+  position: relative;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.brand-mark img { width: 100%; height: 100%; object-fit: cover; }
+.brand-name { font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+.brand-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--accent-dim);
+}
+
+.nav-actions { display: flex; align-items: center; gap: 10px; }
+
+/* Icon buttons: theme toggle + hamburger */
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-line);
+  background: transparent;
+  color: var(--text-hi);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.icon-btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+.icon-moon { display: none; }
+:root[data-theme="light"] .icon-sun { display: none; }
+:root[data-theme="light"] .icon-moon { display: block; }
+
+/* Hamburger -> dropdown menu drawer */
+.menu-drawer {
+  position: absolute;
+  top: 68px;
+  right: 32px;
+  min-width: 210px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  box-shadow: 0 16px 36px var(--shadow-color);
+  z-index: 99;
+}
+.menu-drawer.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.menu-drawer a {
+  display: block;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-mid);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.menu-drawer a:hover { background: var(--accent-soft); color: var(--accent); }
+.menu-drawer-divider { height: 1px; background: var(--border-line); margin: 6px 6px; }
+.menu-drawer-highlight {
+  background: var(--accent);
+  color: var(--accent-on) !important;
+  font-weight: 600;
+  text-align: center;
+}
+.menu-drawer-highlight:hover { background: var(--accent-dim); color: var(--accent-on) !important; }
+
+/* ---------------- Hero ---------------- */
+.hero { padding: 72px 0 60px; text-align: center; }
+.hero h1 {
+  font-size: clamp(32px, 5.4vw, 64px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 22px 0 24px;
+}
+.hero h1 .hl { color: var(--accent); }
+.hero p {
+  max-width: 640px;
+  margin: 0 auto;
+  color: var(--text-mid);
+  font-size: 16px;
+  padding: 0 8px;
+}
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 36px;
+  flex-wrap: wrap;
+}
+
+/* ---------------- Live Feed Panel (signature element) ------- */
+.feed-panel {
+  max-width: 980px;
+  margin: 64px auto 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.feed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border-line);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-mid);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.feed-live {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--accent);
+}
+.feed-live .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.4s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.feed-body {
+  position: relative;
+  aspect-ratio: 16/7.2;
+  background:
+    radial-gradient(circle at 50% 40%, var(--accent-soft), transparent 60%),
+    repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 40px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.scan-line {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.7;
+  animation: scan 3.2s linear infinite;
+}
+@keyframes scan { 0%{ top:5% } 50%{ top:92% } 100%{ top:5% } }
+
+.detect-box {
+  position: absolute;
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-soft);
+}
+.detect-box::after {
+  content: attr(data-label);
+  position: absolute;
+  top: -26px; left: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--accent);
+  color: var(--accent-on);
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.box1 { top: 28%; left: 12%; width: 130px; height: 100px; }
+.box2 { top: 45%; left: 62%; width: 110px; height: 90px; }
+.box3 { top: 18%; left: 68%; width: 95px; height: 80px; }
+
+.feed-caption {
+  padding: 16px 22px;
+  border-top: 1px solid var(--border-line);
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-low);
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+
+/* ---------------- Stat strip ---------------- */
+.stat-strip {
+  border-top: 1px solid var(--border-line);
+  border-bottom: 1px solid var(--border-line);
+  padding: 40px 0;
+  margin-top: 90px;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  text-align: center;
+}
+.stat-num { font-size: 34px; font-weight: 700; color: var(--accent); font-family: var(--font-mono); }
+.stat-label { font-size: 13px; color: var(--text-mid); margin-top: 6px; }
+
+/* ---------------- Section shared ---------------- */
+.section { padding: 90px 0; }
+.section-head { max-width: 640px; margin-bottom: 56px; }
+.section-head h2 {
+  font-size: clamp(26px, 3.4vw, 40px);
+  margin-top: 16px;
+  letter-spacing: -0.01em;
+}
+.section-head p { color: var(--text-mid); margin-top: 14px; font-size: 15.5px; }
+.section-alt { background: var(--bg-panel); border-top: 1px solid var(--border-line); border-bottom: 1px solid var(--border-line); }
+
+/* ---------------- Cara Kerja (process) ---------------- */
+.process-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border-line);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.process-step { background: var(--bg-card); padding: 32px 26px; position: relative; }
+.process-index { font-family: var(--font-mono); color: var(--accent-dim); font-size: 13px; }
+.process-step h3 { font-size: 18px; margin: 14px 0 10px; }
+.process-step p { font-size: 14px; color: var(--text-mid); }
+
+/* ---------------- Fitur (cards) ---------------- */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-md);
+  padding: 30px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.feature-card:hover { border-color: var(--accent-dim); transform: translateY(-4px); }
+.feature-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 18px;
+}
+.feature-card h3 { font-size: 17px; margin-bottom: 8px; }
+.feature-card p { font-size: 14px; color: var(--text-mid); }
+
+/* ---------------- Klasifikasi (category tags) ---------------- */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.category-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.category-swatch { width: 12px; height: 40px; border-radius: 4px; flex-shrink: 0; }
+.category-card h4 { font-size: 15.5px; }
+.category-card span { font-size: 12.5px; color: var(--text-mid); font-family: var(--font-mono); }
+
+/* ---------------- Arsitektur (pipeline) ---------------- */
+.pipeline {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow-x: auto;
+}
+.pipe-node {
+  flex: 1;
+  min-width: 190px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-md);
+  padding: 24px 20px;
+  text-align: center;
+}
+.pipe-node h4 { font-size: 14.5px; margin: 10px 0 6px; }
+.pipe-node span { font-family: var(--font-mono); font-size: 11px; color: var(--text-low); }
+.pipe-arrow { display: flex; align-items: center; justify-content: center; padding: 0 10px; color: var(--accent-dim); font-size: 20px; }
+
+/* ---------------- CTA banner ---------------- */
+.cta-banner {
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-panel));
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius-lg);
+  padding: 64px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.cta-banner h2 { font-size: clamp(24px, 3.6vw, 38px); margin-bottom: 16px; }
+.cta-banner p { color: var(--text-mid); max-width: 520px; margin: 0 auto 30px; }
+
+/* ---------------- Footer ---------------- */
+footer { border-top: 1px solid var(--border-line); padding: 50px 0 30px; }
+.footer-grid { display: flex; justify-content: center; margin-bottom: 34px; }
+
+/* Utility row: clock, tucked near the bottom of the footer */
+.footer-utility {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 22px 0;
+  border-top: 1px solid var(--border-line);
+  border-bottom: 1px solid var(--border-line);
+}
+
+.clock-widget {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-dim);
+  padding: 8px 14px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.clock-widget .clock-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.4s infinite;
+  flex-shrink: 0;
+}
+.clock-widget .clock-date { color: var(--text-mid); }
+
+.footer-bottom { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-low); padding-top: 22px; font-family: var(--font-mono); flex-wrap: wrap; gap: 12px;}
+
+/* ---------------- Made-with credit ---------------- */
+.made-with {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-low);
+  padding: 18px 0 4px;
+  text-align: center;
+}
+.made-with svg { flex-shrink: 0; }
+.made-with .nodejs-mark { color: #5FA04E; }
+.made-with .code-tag {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-dim);
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 900px) {
+  .stat-grid, .process-grid, .feature-grid, .category-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .container { padding: 0 20px; }
+  .section { padding: 64px 0; }
+  .hero { padding: 48px 0 40px; }
+  .stat-strip { margin-top: 56px; padding: 28px 0; }
+  .menu-drawer { right: 20px; }
+}
+@media (max-width: 640px) {
+  /* Arsitektur pipeline: stack vertically on mobile, arrows rotate to point down */
+  .pipeline {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+  .pipe-node { min-width: 0; width: 100%; }
+  .pipe-arrow { padding: 6px 0; transform: rotate(90deg); }
+}
+@media (max-width: 560px) {
+  .stat-grid, .process-grid, .feature-grid, .category-grid { grid-template-columns: 1fr; }
+  .cta-banner { padding: 36px 20px; }
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-actions .btn { justify-content: center; }
+  .footer-bottom { flex-direction: column; text-align: center; }
+  .clock-widget { justify-content: center; }
+  .brand-sub { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <div class="brand">
+      <div class="brand-mark">
+        <img src="image/logo.png" alt="RECYNT AI Logo">
+      </div>
+      <div>
+        <div class="brand-name">RECYNT AI</div>
+        <div class="brand-sub">WASTE DETECTION SYSTEM</div>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <button class="icon-btn" id="themeToggle" aria-label="Ganti mode terang/gelap">
+        <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+
+      <button class="icon-btn" id="menuToggle" aria-label="Buka menu navigasi" aria-expanded="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="menu-drawer" id="menuDrawer">
+      <a href="#cara-kerja">Cara Kerja</a>
+      <a href="#fitur">Fitur</a>
+      <a href="#klasifikasi">Klasifikasi</a>
+      <a href="#arsitektur">Arsitektur</a>
+      <a href="#demo-video">Demo Video</a>
+      <a href="#dampak">Dampak</a>
+      <div class="menu-drawer-divider"></div>
+      <a href="login.html">Login</a>
+      <a href="register.html" class="menu-drawer-highlight">Daftar</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <span class="eyebrow">COMPUTER VISION · REAL-TIME OBJECT DETECTION</span>
+  <h1>Mendeteksi sampah,<br><span class="hl">menyortir secara cerdas.</span></h1>
+  <p>RECYNT AI adalah sistem deteksi sampah berbasis kecerdasan buatan yang mengenali, mengklasifikasikan, dan menyortir limbah secara otomatis dan real-time — mengubah tempat sampah biasa menjadi titik daur ulang pintar.</p>
+  <div class="hero-actions">
+    <a href="register.html" class="btn btn-primary"> Coba Demo Sistem</a>
+    <a href="#cara-kerja" class="btn btn-outline">Pelajari Cara Kerja</a>
+  </div>
+
+  <div class="feed-panel">
+    <div class="feed-header">
+      <span>RECYNT-CAM-01 · conveyor_feed</span>
+      <span class="feed-live"><span class="dot"></span>LIVE</span>
+    </div>
+    <div class="feed-body">
+      <div class="scan-line"></div>
+      <div class="detect-box box1" data-label="Plastik · 94%"></div>
+      <div class="detect-box box2" data-label="Kertas · 88%"></div>
+      <div class="detect-box box3" data-label="Logam · 91%"></div>
+    </div>
+    <div class="feed-caption">
+      <span>MODEL: YOLOv8n-waste</span>
+      <span>LATENCY: 42ms</span>
+      <span>FPS: 27</span>
+    </div>
+  </div>
+</header>
+
+<section class="stat-strip">
+  <div class="container stat-grid">
+    <div>
+      <div class="stat-num" id="statDetections">—</div>
+      <div class="stat-label">Total Deteksi</div>
+    </div>
+    <div>
+      <div class="stat-num" id="statCarbon">—</div>
+      <div class="stat-label">Kg CO₂ Terselamatkan</div>
+    </div>
+    <div>
+      <div class="stat-num" id="statUsers">—</div>
+      <div class="stat-label">Pengguna Aktif</div>
+    </div>
+    <div>
+      <div class="stat-num">6</div>
+      <div class="stat-label">Kategori Sampah</div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="cara-kerja">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">ALUR SISTEM</span>
+      <h2>Empat tahap dari kamera hingga poin daur ulang</h2>
+      <p>Setiap objek yang melewati konveyor atau difoto lewat aplikasi mobile diproses melalui pipeline yang sama, dari akuisisi gambar hingga insentif untuk pengguna.</p>
+    </div>
+    <div class="process-grid">
+      <div class="process-step">
+        <span class="process-index">01</span>
+        <h3>Tangkap Gambar</h3>
+        <p>Kamera konveyor atau kamera ponsel menangkap gambar objek sampah secara real-time.</p>
+      </div>
+      <div class="process-step">
+        <span class="process-index">02</span>
+        <h3>Deteksi YOLO</h3>
+        <p>Model YOLOv8 mendeteksi bounding box & mengklasifikasikan jenis sampah dalam hitungan milidetik.</p>
+      </div>
+      <div class="process-step">
+        <span class="process-index">03</span>
+        <h3>Hitung Dampak</h3>
+        <p>Sistem menghitung estimasi pengurangan emisi CO₂ berdasarkan kategori sampah yang terdeteksi.</p>
+      </div>
+      <div class="process-step">
+        <span class="process-index">04</span>
+        <h3>Beri Eco Points</h3>
+        <p>Pengguna mendapatkan eco points yang dapat dipantau di leaderboard komunitas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="fitur">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">FITUR UTAMA</span>
+      <h2>Dibangun untuk akurasi & keterlibatan pengguna</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/></svg></div>
+        <h3>Deteksi Real-Time</h3>
+        <p>Klasifikasi objek sampah secara instan dengan latensi rendah menggunakan YOLOv8.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg></div>
+        <h3>Dashboard Analitik</h3>
+        <p>Pantau statistik deteksi, riwayat, dan dampak lingkungan secara personal maupun agregat.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></div>
+        <h3>Eco Points & Leaderboard</h3>
+        <p>Sistem gamifikasi yang memberi insentif poin untuk setiap deteksi sampah yang berhasil.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></div>
+        <h3>Estimasi Jejak Karbon</h3>
+        <p>Setiap deteksi dikonversi menjadi estimasi pengurangan emisi CO₂ yang transparan.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+        <h3>Autentikasi Aman</h3>
+        <p>Sistem login berbasis JWT dengan enkripsi password untuk melindungi data pengguna.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 6v6l4 2"/></svg></div>
+        <h3>Tips Daur Ulang</h3>
+        <p>Rekomendasi cara mendaur ulang yang tepat untuk setiap kategori sampah yang terdeteksi.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="klasifikasi">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">KATEGORI</span>
+      <h2>Enam kelas klasifikasi sampah</h2>
+      <p>Model dilatih untuk mengenali kategori sampah rumah tangga & industri yang paling umum ditemukan.</p>
+    </div>
+    <div class="category-grid">
+      <div class="category-card"><div class="category-swatch" style="background:#39ff9e"></div><div><h4>Plastik</h4><span>BOTTLE · BAG · PACKAGING</span></div></div>
+      <div class="category-card"><div class="category-swatch" style="background:#7dd3fc"></div><div><h4>Kertas</h4><span>CARDBOARD · PAPER</span></div></div>
+      <div class="category-card"><div class="category-swatch" style="background:#fbbf24"></div><div><h4>Logam</h4><span>CAN · ALUMINUM · IRON</span></div></div>
+      <div class="category-card"><div class="category-swatch" style="background:#a78bfa"></div><div><h4>Kaca</h4><span>BOTTLE · GLASS SHARD</span></div></div>
+      <div class="category-card"><div class="category-swatch" style="background:#fb923c"></div><div><h4>Organik</h4><span>FOOD WASTE · BIODEGRADABLE</span></div></div>
+      <div class="category-card"><div class="category-swatch" style="background:#f87171"></div><div><h4>Elektronik</h4><span>E-WASTE · BATTERY</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="arsitektur">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">ARSITEKTUR SISTEM</span>
+      <h2>Tiga layer yang bekerja bersama</h2>
+      <p>Aplikasi mobile (Flutter) dan website mengonsumsi API yang sama dari backend, yang meneruskan gambar ke AI service berbasis YOLO.</p>
+    </div>
+    <div class="pipeline">
+      <div class="pipe-node">
+        <span class="eyebrow" style="font-size:10px">CLIENT</span>
+        <h4>Web & Mobile App</h4>
+        <span>Flutter · HTML/CSS/JS</span>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <span class="eyebrow" style="font-size:10px">API</span>
+        <h4>Backend Server</h4>
+        <span>Node.js · Express · JWT</span>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <span class="eyebrow" style="font-size:10px">AI ENGINE</span>
+        <h4>Detection Service</h4>
+        <span>Python · FastAPI · YOLOv8</span>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <span class="eyebrow" style="font-size:10px">STORAGE</span>
+        <h4>Database</h4>
+        <span>MySQL / MariaDB</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="dampak">
+  <div class="container">
+    <div class="cta-banner">
+      <span class="eyebrow" style="justify-content:center">MULAI SEKARANG</span>
+      <h2>Setiap deteksi adalah langkah kecil untuk bumi.</h2>
+      <p>Bergabunglah dengan komunitas RECYNT AI, kumpulkan eco points, dan lihat dampak nyata dari kebiasaan memilah sampahmu.</p>
+      <a href="register.html" class="btn btn-primary">Buat Akun Gratis</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="brand">
+        <div class="brand-mark"><img src="image/logo.png" alt="RECYNT AI Logo"></div>
+        <div>
+          <div class="brand-name">RECYNT AI</div>
+          <div class="brand-sub">WASTE DETECTION SYSTEM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-utility">
+      <div class="clock-widget" id="clockWidget">
+        <span class="clock-dot"></span>
+        <span class="clock-date" id="clockDate">—</span>
+        <span class="clock-time" id="clockTime">--:--:--</span>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2026 RECYNT AI — Tim Satu Asa, Politeknik Negeri Medan</span>
+      <span>Recycle Intelligent Waste Detection System</span>
+    </div>
+    <div class="made-with">
+      <span>Dibuat dengan</span>
+      <svg class="nodejs-mark" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.85c-.27 0-.55.07-.78.2L3.78 6.32c-.48.28-.78.8-.78 1.36v9.24c0 .56.3 1.08.78 1.36l2.15 1.24c1.04.51 1.42.51 1.9.51 1.56 0 2.45-.94 2.45-2.59V8.5c0-.13-.11-.24-.24-.24h-1.02c-.13 0-.24.11-.24.24v8.94c0 .73-.76 1.46-2 .83l-2.24-1.3a.26.26 0 01-.13-.22V7.68c0-.09.05-.18.13-.22l7.44-4.27a.25.25 0 01.25 0l7.44 4.27c.08.04.13.13.13.22v8.87c0 .09-.05.17-.13.22l-7.44 4.28a.26.26 0 01-.25 0l-1.9-1.13c-.06-.03-.14-.04-.19-.01-.53.3-.63.34-1.13.51-.12.04-.3.11.07.32l2.48 1.47c.24.14.51.21.79.21s.55-.07.78-.2l7.44-4.28c.48-.28.78-.8.78-1.36V7.68c0-.56-.3-1.08-.78-1.36l-7.44-4.27a1.6 1.6 0 00-.78-.2z"/><path d="M14.28 13.15c-1.99 0-2.4-.55-2.53-1.55a.24.24 0 00-.24-.21h-1.06c-.13 0-.24.1-.24.24 0 1.28.7 2.81 3.99 2.81 2.4 0 3.78-.93 3.78-2.55 0-1.6-1.08-2.03-3.36-2.33-2.3-.3-2.53-.46-2.53-1 0-.45.2-1.05 1.9-1.05 1.51 0 2.07.33 2.3 1.34.02.11.12.19.24.19h1.06c.07 0 .13-.03.18-.08.05-.05.07-.12.06-.19-.15-1.75-1.32-2.57-3.68-2.57-2.1 0-3.36.89-3.36 2.38 0 1.62 1.25 2.07 3.28 2.27 2.42.24 2.61.6 2.61 1.08 0 .84-.67 1.2-2.24 1.2z"/></svg>
+      <span>dan</span>
+      <span class="code-tag">&lt;/&gt;</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* Real-time clock & date */
+function updateClock() {
+  const now = new Date();
+  const hariList = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+  const bulanList = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  const dateStr = hariList[now.getDay()] + ", " + now.getDate() + " " + bulanList[now.getMonth()] + " " + now.getFullYear();
+  const timeStr = now.toLocaleTimeString('id-ID', { hour12: false });
+  const dateEl = document.getElementById('clockDate');
+  const timeEl = document.getElementById('clockTime');
+  if (dateEl) dateEl.textContent = dateStr;
+  if (timeEl) timeEl.textContent = timeStr;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* Hamburger menu drawer */
+const menuToggle = document.getElementById('menuToggle');
+const menuDrawer = document.getElementById('menuDrawer');
+if (menuToggle && menuDrawer) {
+  menuToggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    const isOpen = menuDrawer.classList.toggle('open');
+    menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  });
+  document.addEventListener('click', function (e) {
+    if (!menuDrawer.contains(e.target) && !menuToggle.contains(e.target)) {
+      menuDrawer.classList.remove('open');
+      menuToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+  menuDrawer.querySelectorAll('a').forEach(function (link) {
+    link.addEventListener('click', function () {
+      menuDrawer.classList.remove('open');
+      menuToggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+}
+
+/* Light / dark mode toggle, remembered per browser */
+const themeToggle = document.getElementById('themeToggle');
+const rootEl = document.documentElement;
+const savedTheme = localStorage.getItem('recynt-theme');
+if (savedTheme === 'light') rootEl.setAttribute('data-theme', 'light');
+if (themeToggle) {
+  themeToggle.addEventListener('click', function () {
+    const isLight = rootEl.getAttribute('data-theme') === 'light';
+    if (isLight) {
+      rootEl.removeAttribute('data-theme');
+      localStorage.setItem('recynt-theme', 'dark');
+    } else {
+      rootEl.setAttribute('data-theme', 'light');
+      localStorage.setItem('recynt-theme', 'light');
+    }
+  });
+}
+</script>
+<script src="js/main.js"></script>
+</body>
+</html>
