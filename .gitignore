@@ -1,17 +1,17 @@
+# Node.js
+node_modules/
+
 # Python
 .venv/
 venv/
 __pycache__/
 *.pyc
 
-# Node
-node_modules/
-
 # Environment
 .env
 .env.*
 
-# VSCode
+# VS Code
 .vscode/
 
 # Logs
@@ -24,6 +24,8 @@ Thumbs.db
 # AI Dataset
 ai-service/dataset/
 ai-service/GARBAGE-CLASSIFICATION-3-2/
+dataset/
+GARBAGE-CLASSIFICATION-3-2/
 
-# Model
+# Model files
 *.pt
