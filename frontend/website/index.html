@@ -1061,15 +1061,15 @@ footer { border-top: 1px solid var(--border-line); padding: 50px 0 30px; }
       <!--
         BACKSOUND DEMO
         ---------------------------------------------------------
-        Ganti "backsound/the_mountain-tutorial-tutorial-music-508040.mp3" di bawah dengan path file
-        audio kamu sendiri (taruh filenya di folder backsound/ di root
+        Ganti "audio/backsound-demo.mp3" di bawah dengan path file
+        audio kamu sendiri (taruh filenya di folder audio/ di root
         project, sejajar dengan folder image/).
         Format yang aman dipakai lintas browser: .mp3
         Rekomendasi: pakai musik instrumental pendek (10-15 detik,
         looping) atau efek "tech/scan" pendek, volume rendah,
         supaya tidak mengganggu narasi di demo-caption.
       -->
-      <audio id="demoAudio" src="backsound/the_mountain-tutorial-tutorial-music-508040.mp3" loop preload="none"></audio>
+      <audio id="demoAudio" src="backsound/the_mountain-tutorial-tutorial-music-508040.mp3" loop preload="auto"></audio>
 
       <div class="demo-controlbar">
         <button class="demo-playbtn" id="demoPlayBtn" aria-label="Putar/Jeda demo">
@@ -1211,25 +1211,44 @@ if (themeToggle) {
   let rafId = null;
 
   /* --- Backsound setup ---
-     Browser modern memblokir audio berbunyi otomatis tanpa interaksi
-     pengguna, jadi audio dimulai dalam kondisi muted. Begitu user klik
-     tombol mute (unmute) atau klik play/pause, itu dianggap interaksi
-     yang sah dan audio boleh mulai bersuara. */
+     Default TIDAK di-mute. Browser tetap bisa menolak audio berbunyi
+     otomatis sebelum ada interaksi apapun dari user (kebijakan
+     autoplay bawaan browser, bukan sesuatu yang bisa di-override lewat
+     kode) — jadi kalau audioEl.play() di bawah gagal saat load, kita
+     pasang fallback: begitu user klik/sentuh/scroll APAPUN di halaman
+     ini (tidak harus tombol demo), audio otomatis langsung diputar. */
+  const savedMute = localStorage.getItem('recynt-demo-muted');
+  const startMuted = savedMute === 'true'; // default: false (unmuted)
   if (audioEl) {
     audioEl.volume = 0.5;
-    audioEl.muted = true;
+    audioEl.muted = startMuted;
   }
-  const savedMute = localStorage.getItem('recynt-demo-muted');
-  const startMuted = savedMute === null ? true : savedMute === 'true';
-  if (audioEl) audioEl.muted = startMuted;
   if (muteBtn) muteBtn.classList.toggle('is-muted', startMuted);
 
   function tryPlayAudio() {
     if (!audioEl || audioEl.muted) return;
     audioEl.play().catch(function () {
-      /* Autoplay ditolak browser, akan dicoba lagi saat user berinteraksi */
+      /* Autoplay ditolak browser saat load; akan otomatis dicoba lagi
+         lewat listener interaksi pertama di bawah. */
     });
   }
+
+  // Coba putar langsung saat halaman dimuat
+  tryPlayAudio();
+
+  // Fallback: interaksi pertama APAPUN di halaman ini men-trigger audio
+  // kalau percobaan autoplay di atas tadi diblokir browser.
+  function unlockAudioOnFirstInteraction() {
+    tryPlayAudio();
+    document.removeEventListener('click', unlockAudioOnFirstInteraction);
+    document.removeEventListener('touchstart', unlockAudioOnFirstInteraction);
+    document.removeEventListener('keydown', unlockAudioOnFirstInteraction);
+    document.removeEventListener('scroll', unlockAudioOnFirstInteraction);
+  }
+  document.addEventListener('click', unlockAudioOnFirstInteraction);
+  document.addEventListener('touchstart', unlockAudioOnFirstInteraction);
+  document.addEventListener('keydown', unlockAudioOnFirstInteraction);
+  document.addEventListener('scroll', unlockAudioOnFirstInteraction, { once: true, passive: true });
 
   function showScene(i) {
     scenes.forEach(function (s) {
