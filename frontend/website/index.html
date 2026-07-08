@@ -654,6 +654,25 @@ img { max-width: 100%; display: block; }
   flex-shrink: 0;
 }
 
+/* Backsound mute/unmute toggle button in the demo controlbar */
+.demo-mutebtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-line);
+  background: transparent;
+  color: var(--text-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.demo-mutebtn:hover { border-color: var(--accent-dim); color: var(--accent); }
+.demo-mutebtn .demo-icon-muted { display: none; }
+.demo-mutebtn.is-muted .demo-icon-unmuted { display: none; }
+.demo-mutebtn.is-muted .demo-icon-muted { display: block; }
+
 /* ---------------- CTA banner ---------------- */
 .cta-banner {
   background: linear-gradient(135deg, var(--bg-card), var(--bg-panel));
@@ -1039,6 +1058,19 @@ footer { border-top: 1px solid var(--border-line); padding: 50px 0 30px; }
         </div>
       </div>
 
+      <!--
+        BACKSOUND DEMO
+        ---------------------------------------------------------
+        Ganti "backsound/the_mountain-tutorial-tutorial-music-508040.mp3" di bawah dengan path file
+        audio kamu sendiri (taruh filenya di folder backsound/ di root
+        project, sejajar dengan folder image/).
+        Format yang aman dipakai lintas browser: .mp3
+        Rekomendasi: pakai musik instrumental pendek (10-15 detik,
+        looping) atau efek "tech/scan" pendek, volume rendah,
+        supaya tidak mengganggu narasi di demo-caption.
+      -->
+      <audio id="demoAudio" src="backsound/the_mountain-tutorial-tutorial-music-508040.mp3" loop preload="none"></audio>
+
       <div class="demo-controlbar">
         <button class="demo-playbtn" id="demoPlayBtn" aria-label="Putar/Jeda demo">
           <svg id="demoPlayIcon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -1046,6 +1078,10 @@ footer { border-top: 1px solid var(--border-line); padding: 50px 0 30px; }
         </button>
         <div class="demo-track"><div class="demo-track-fill" id="demoTrackFill"></div></div>
         <span class="demo-time" id="demoTime">0:00 / 0:12</span>
+        <button class="demo-mutebtn" id="demoMuteBtn" aria-label="Aktifkan atau matikan backsound">
+          <svg class="demo-icon-unmuted" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+          <svg class="demo-icon-muted" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+        </button>
       </div>
     </div>
   </div>
@@ -1151,7 +1187,8 @@ if (themeToggle) {
     }
   });
 }
-/* Demo Video: simulated screen-recording, 4 scenes, ~12s loop */
+
+/* Demo Video: simulated screen-recording, 4 scenes, ~12s loop, dengan backsound */
 (function () {
   const scenes = document.querySelectorAll('.demo-scene');
   const playBtn = document.getElementById('demoPlayBtn');
@@ -1161,6 +1198,8 @@ if (themeToggle) {
   const timeLabel = document.getElementById('demoTime');
   const boxA = document.getElementById('demoBoxA');
   const latencyEl = document.getElementById('demoLatency');
+  const audioEl = document.getElementById('demoAudio');
+  const muteBtn = document.getElementById('demoMuteBtn');
   if (!scenes.length || !playBtn) return;
 
   const durations = [3000, 2500, 3000, 3500]; // ms per scene
@@ -1170,6 +1209,27 @@ if (themeToggle) {
   let playing = true;
   let lastTick = performance.now();
   let rafId = null;
+
+  /* --- Backsound setup ---
+     Browser modern memblokir audio berbunyi otomatis tanpa interaksi
+     pengguna, jadi audio dimulai dalam kondisi muted. Begitu user klik
+     tombol mute (unmute) atau klik play/pause, itu dianggap interaksi
+     yang sah dan audio boleh mulai bersuara. */
+  if (audioEl) {
+    audioEl.volume = 0.5;
+    audioEl.muted = true;
+  }
+  const savedMute = localStorage.getItem('recynt-demo-muted');
+  const startMuted = savedMute === null ? true : savedMute === 'true';
+  if (audioEl) audioEl.muted = startMuted;
+  if (muteBtn) muteBtn.classList.toggle('is-muted', startMuted);
+
+  function tryPlayAudio() {
+    if (!audioEl || audioEl.muted) return;
+    audioEl.play().catch(function () {
+      /* Autoplay ditolak browser, akan dicoba lagi saat user berinteraksi */
+    });
+  }
 
   function showScene(i) {
     scenes.forEach(function (s) {
@@ -1205,6 +1265,10 @@ if (themeToggle) {
       elapsed = 0;
       sceneIndex = 0;
       showScene(0);
+      /* Sinkronkan ulang backsound tiap demo mengulang dari awal */
+      if (audioEl && !audioEl.muted) {
+        try { audioEl.currentTime = 0; } catch (e) { /* ignore */ }
+      }
     }
 
     const pct = (elapsed / totalDuration) * 100;
@@ -1222,7 +1286,24 @@ if (themeToggle) {
     playIcon.style.display = playing ? 'none' : 'block';
     pauseIcon.style.display = playing ? 'block' : 'none';
     lastTick = performance.now();
+    if (playing) {
+      tryPlayAudio();
+    } else if (audioEl) {
+      audioEl.pause();
+    }
   });
+
+  if (muteBtn) {
+    muteBtn.addEventListener('click', function () {
+      if (!audioEl) return;
+      audioEl.muted = !audioEl.muted;
+      muteBtn.classList.toggle('is-muted', audioEl.muted);
+      localStorage.setItem('recynt-demo-muted', audioEl.muted ? 'true' : 'false');
+      if (!audioEl.muted && playing) {
+        tryPlayAudio();
+      }
+    });
+  }
 })();
 </script>
 <script src="js/main.js"></script>
