@@ -268,6 +268,14 @@ button { font-family: inherit; cursor: pointer; border: none; }
   margin: 4px 0 6px;
 }
 .points-sub { color: var(--text-mid); font-size: 13px; margin-bottom: 20px; }
+.points-stale-note {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--danger);
+  margin: -14px 0 16px;
+  display: none;
+}
+.points-stale-note.show { display: block; }
 
 /* stat mini row spanning full width */
 .stat-mini-row {
@@ -419,7 +427,8 @@ footer .container { max-width: 1240px; }
     <div class="card points-card">
       <h2><span class="card-icon">🌱</span> Eco Points</h2>
       <div class="points-num" id="points">0</div>
-      <div class="points-sub">Total poin dari hasil deteksi sampah</div>
+      <div class="points-sub" id="pointsSub">Total poin dari hasil deteksi sampah</div>
+      <div class="points-stale-note" id="pointsStaleNote">⚠ Tidak dapat memuat data terbaru dari server — menampilkan data tersimpan.</div>
       <a href="scan.html" class="btn btn-primary btn-block"> Pindai Sampah</a>
     </div>
 
@@ -491,6 +500,13 @@ footer .container { max-width: 1240px; }
 
 <script>
 /* =========================
+   KONFIGURASI
+========================= */
+// Samakan dengan API_BASE di scan.html — domain backend Node.js kamu.
+const API_BASE = "https://recynt-ai-service-production.up.railway.app";
+const STATS_API = `${API_BASE}/api/detections/stats`;
+
+/* =========================
    CEK LOGIN TOKEN
 ========================= */
 const token = localStorage.getItem("recynt_token");
@@ -499,32 +515,90 @@ if (!token) {
 }
 
 /* =========================
-   LOAD USER DATA
+   RENDER USER INFO (bagian statis: nama, username, email, role)
+   Ini masih boleh dari localStorage karena jarang berubah dan tidak
+   mempengaruhi keakuratan poin.
 ========================= */
-function loadUser() {
+function renderUserInfo() {
+  const user = JSON.parse(localStorage.getItem("recynt_user") || "null");
+  if (!user) return;
+
+  document.getElementById("greeting").innerText = "Halo, " + (user.fullname || user.username || "Pengguna");
+  document.getElementById("userInfo").innerHTML = `
+    <div class="info-row"><span class="k">Nama</span><span class="v">${user.fullname || "-"}</span></div>
+    <div class="info-row"><span class="k">Username</span><span class="v">${user.username || "-"}</span></div>
+    <div class="info-row"><span class="k">Email</span><span class="v">${user.email || "-"}</span></div>
+    <div class="info-row"><span class="k">Role</span><span class="v"><span class="role-tag">${user.role || "user"}</span></span></div>
+  `;
+}
+
+/* =========================
+   RENDER POIN & STATISTIK
+========================= */
+function renderStats({ points, scans, carbon }) {
+  document.getElementById("points").innerText = points;
+  document.getElementById("statScans").innerText = scans;
+  document.getElementById("statCarbon").innerText = Number(carbon).toFixed(1);
+}
+
+/* =========================
+   LOAD USER DATA
+   PENTING: poin & statistik SELALU diambil ulang dari server
+   (GET /api/detections/stats) setiap dashboard dibuka. Ini memastikan
+   angka yang tampil identik dengan yang tersimpan di database, jadi
+   tidak akan pernah "reset" atau berbeda setelah logout/login,
+   ganti device, atau localStorage yang basi.
+========================= */
+async function loadUser() {
+  renderUserInfo();
+
+  const pointsEl = document.getElementById("points");
+  const staleNote = document.getElementById("pointsStaleNote");
+  pointsEl.innerText = "…";
+  staleNote.classList.remove("show");
+
   try {
-    const user = JSON.parse(localStorage.getItem("recynt_user"));
-    if (!user) throw new Error("User tidak ditemukan");
+    const res = await fetch(STATS_API, {
+      headers: { "Authorization": "Bearer " + token }
+    });
 
-    document.getElementById("greeting").innerText = "Halo, " + (user.fullname || user.username || "Pengguna");
+    if (res.status === 401 || res.status === 403) {
+      // Token kadaluarsa / tidak valid → paksa login ulang
+      localStorage.removeItem("recynt_token");
+      window.location.href = "login.html";
+      return;
+    }
 
-    document.getElementById("userInfo").innerHTML = `
-      <div class="info-row"><span class="k">Nama</span><span class="v">${user.fullname || "-"}</span></div>
-      <div class="info-row"><span class="k">Username</span><span class="v">${user.username || "-"}</span></div>
-      <div class="info-row"><span class="k">Email</span><span class="v">${user.email || "-"}</span></div>
-      <div class="info-row"><span class="k">Role</span><span class="v"><span class="role-tag">${user.role || "user"}</span></span></div>
-    `;
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok || !payload.success) {
+      throw new Error(payload.message || "Gagal memuat statistik dari server.");
+    }
 
-    const points = user.points || 0;
-    document.getElementById("points").innerText = points;
+    const { total_points, total_scans, total_carbon_saved } = payload.data;
 
-    const scanCount = parseInt(localStorage.getItem("recynt_scan_count") || "0", 10);
-    document.getElementById("statScans").innerText = scanCount;
-    document.getElementById("statCarbon").innerText = (scanCount * 0.15).toFixed(1);
+    renderStats({ points: total_points, scans: total_scans, carbon: total_carbon_saved });
+
+    // Sinkronkan balik ke localStorage supaya halaman lain (mis. navPoints
+    // di scan.html) juga langsung memakai angka terbaru dari server.
+    const user = JSON.parse(localStorage.getItem("recynt_user") || "{}");
+    user.points = total_points;
+    localStorage.setItem("recynt_user", JSON.stringify(user));
+    localStorage.setItem("recynt_scan_count", total_scans);
 
   } catch (err) {
-    console.error(err);
-    alert("Gagal load user data");
+    console.error("Gagal memuat stats dari server, fallback ke localStorage:", err);
+
+    // Fallback: tetap tampilkan sesuatu dari cache lokal supaya dashboard
+    // tidak kosong total saat backend/koneksi bermasalah, tapi beri tahu
+    // pengguna bahwa data ini mungkin tidak akurat.
+    const user = JSON.parse(localStorage.getItem("recynt_user") || "{}");
+    const scanCount = parseInt(localStorage.getItem("recynt_scan_count") || "0", 10);
+    renderStats({
+      points: user.points || 0,
+      scans: scanCount,
+      carbon: scanCount * 0.15
+    });
+    staleNote.classList.add("show");
   }
 }
 
