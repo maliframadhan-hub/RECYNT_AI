@@ -668,7 +668,10 @@ footer .container { max-width: 1240px; }
 /* =========================================================
    KONFIGURASI
 ========================================================= */
-const AI_API = "http://127.0.0.1:8000/detect"; // endpoint FastAPI YOLOv8 (main.py)
+// Panggil backend Node.js (bukan AI service langsung), agar poin & riwayat
+// scan tersimpan ke database. Ganti URL ini dengan domain Railway backend kamu.
+const API_BASE = "https://GANTI-DENGAN-DOMAIN-BACKEND-NODEJS.up.railway.app";
+const SCAN_API = `${API_BASE}/api/scan`;
 
 // Info tampilan & poin per kategori. Cocok dengan CATEGORY_MAP di main.py
 // (organik/anorganik/B3) maupun kategori marketing (plastik/kertas/dll)
@@ -841,25 +844,29 @@ scan.onclick = async () => {
 
   const startedAt = performance.now();
   const form = new FormData();
-  form.append("file", blob, "capture.jpg");
+  form.append("image", blob, "capture.jpg"); // nama field harus "image", sesuai upload.single('image') di backend
 
   try {
-    const res = await fetch(AI_API, { method: "POST", body: form });
+    const res = await fetch(SCAN_API, {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + token },
+      body: form,
+    });
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || "AI service merespon dengan error.");
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || "Backend merespon dengan error.");
     }
 
-    const data = await res.json();
     const elapsedMs = Math.round(performance.now() - startedAt);
 
     loading.classList.remove("show");
     scanLine.classList.remove("active");
     scan.disabled = false;
 
-    if (!data.category_name) {
-      showError("Tidak ada objek sampah yang terdeteksi. Coba foto ulang dengan pencahayaan lebih baik.");
+    if (!data.detected) {
+      showError(data.message || "Tidak ada objek sampah yang terdeteksi. Coba foto ulang dengan pencahayaan lebih baik.");
       return;
     }
 
@@ -869,7 +876,7 @@ scan.onclick = async () => {
     loading.classList.remove("show");
     scanLine.classList.remove("active");
     scan.disabled = false;
-    showError(e.message || "Tidak dapat terhubung ke AI service. Pastikan service berjalan di port 8000.");
+    showError(e.message || "Tidak dapat terhubung ke server. Coba lagi.");
   }
 };
 
@@ -877,6 +884,7 @@ function showResult(data, elapsedMs) {
   const key = (data.category_name || "").toString().toLowerCase().trim();
   const info = CATEGORY_INFO[key] || DEFAULT_INFO;
   const confidencePct = Math.round((data.confidence || 0) * 100);
+  const pointsEarned = (typeof data.points_earned === "number") ? data.points_earned : info.points;
 
   document.getElementById("resultClass").innerText = info.label;
   document.getElementById("resultSwatch").style.background = info.color;
@@ -884,14 +892,17 @@ function showResult(data, elapsedMs) {
   document.getElementById("confValue").innerText = confidencePct + "%";
   document.getElementById("confBar").style.width = confidencePct + "%";
   document.getElementById("confBar").style.background = `linear-gradient(90deg, ${info.color}99, ${info.color})`;
-  document.getElementById("resultPoints").innerText = "+" + info.points;
+  document.getElementById("resultPoints").innerText = "+" + pointsEarned;
   document.getElementById("capLatency").innerText = "LATENCY: " + elapsedMs + "ms";
 
   result.classList.add("show");
   panelStatus.innerText = "RECYNT-CAM · selesai";
 
-  // update poin & riwayat lokal
-  userData.points = (userData.points || 0) + info.points;
+  // Poin resmi datang dari database (backend), bukan dihitung manual di
+  // frontend, supaya selalu konsisten dengan histori di tabel `detections`.
+  userData.points = (typeof data.total_points === "number")
+    ? data.total_points
+    : (userData.points || 0) + pointsEarned;
   localStorage.setItem("recynt_user", JSON.stringify(userData));
   document.getElementById("navPoints").innerText = userData.points;
 
