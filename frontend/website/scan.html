@@ -670,30 +670,28 @@ footer .container { max-width: 1240px; }
 ========================================================= */
 // Panggil backend Node.js (bukan AI service langsung), agar poin & riwayat
 // scan tersimpan ke database. Ganti API_BASE dengan domain Railway backend kamu.
-const API_BASE = "https://recynt-ai-service-production.up.railway.app";
+const API_BASE = "https://recyntai-production.up.railway.app";
 const SCAN_API = `${API_BASE}/api/detections`;
 
-// Info tampilan (label, warna, tips) per kategori. Kolom "points" di sini
-// HANYA untuk fallback tampilan sebelum server merespon — angka resmi yang
-// benar-benar dipakai untuk menambah eco points SELALU datang dari server
-// (data.points_earned / data.total_points), bukan dari objek ini.
+// Info tampilan & poin per kategori. Cocok dengan CATEGORY_MAP di main.py
+// (organik/anorganik/B3) maupun kategori marketing (plastik/kertas/dll)
 const CATEGORY_INFO = {
-  plastic:   { label: "Plastik",   color: "#39ff9e", tip: "Bilas wadah plastik sebelum dibuang dan pisahkan tutup botolnya agar mudah didaur ulang." },
-  plastik:   { label: "Plastik",   color: "#39ff9e", tip: "Bilas wadah plastik sebelum dibuang dan pisahkan tutup botolnya agar mudah didaur ulang." },
-  paper:     { label: "Kertas",    color: "#7dd3fc", tip: "Lipat kardus dan jaga agar kertas tetap kering supaya bisa didaur ulang dengan baik." },
-  kertas:    { label: "Kertas",    color: "#7dd3fc", tip: "Lipat kardus dan jaga agar kertas tetap kering supaya bisa didaur ulang dengan baik." },
-  metal:     { label: "Logam",     color: "#fbbf24", tip: "Kaleng logam bisa dilelehkan berulang kali tanpa kehilangan kualitas — sangat layak didaur ulang." },
-  logam:     { label: "Logam",     color: "#fbbf24", tip: "Kaleng logam bisa dilelehkan berulang kali tanpa kehilangan kualitas — sangat layak didaur ulang." },
-  glass:     { label: "Kaca",      color: "#a78bfa", tip: "Bungkus pecahan kaca dengan aman sebelum dibuang untuk menghindari cedera petugas." },
-  kaca:      { label: "Kaca",      color: "#a78bfa", tip: "Bungkus pecahan kaca dengan aman sebelum dibuang untuk menghindari cedera petugas." },
-  organic:   { label: "Organik",   color: "#fb923c", tip: "Sisa makanan bisa diolah menjadi kompos untuk menyuburkan tanaman." },
-  organik:   { label: "Organik",   color: "#fb923c", tip: "Sisa makanan bisa diolah menjadi kompos untuk menyuburkan tanaman." },
-  ewaste:    { label: "Elektronik",color: "#f87171", tip: "Serahkan limbah elektronik ke drop box resmi, jangan dicampur sampah biasa." },
-  elektronik:{ label: "Elektronik",color: "#f87171", tip: "Serahkan limbah elektronik ke drop box resmi, jangan dicampur sampah biasa." },
-  anorganik: { label: "Anorganik", color: "#7dd3fc", tip: "Pisahkan sampah anorganik agar dapat diproses di fasilitas daur ulang terdekat." },
-  b3:        { label: "B3 (Limbah Berbahaya)", color: "#ff6b6b", tip: "Limbah B3 wajib diserahkan ke titik pengumpulan khusus, jangan dibuang sembarangan." },
+  plastic:   { label: "Plastik",   color: "#39ff9e", points: 10, tip: "Bilas wadah plastik sebelum dibuang dan pisahkan tutup botolnya agar mudah didaur ulang." },
+  plastik:   { label: "Plastik",   color: "#39ff9e", points: 10, tip: "Bilas wadah plastik sebelum dibuang dan pisahkan tutup botolnya agar mudah didaur ulang." },
+  paper:     { label: "Kertas",    color: "#7dd3fc", points: 8,  tip: "Lipat kardus dan jaga agar kertas tetap kering supaya bisa didaur ulang dengan baik." },
+  kertas:    { label: "Kertas",    color: "#7dd3fc", points: 8,  tip: "Lipat kardus dan jaga agar kertas tetap kering supaya bisa didaur ulang dengan baik." },
+  metal:     { label: "Logam",     color: "#fbbf24", points: 15, tip: "Kaleng logam bisa dilelehkan berulang kali tanpa kehilangan kualitas — sangat layak didaur ulang." },
+  logam:     { label: "Logam",     color: "#fbbf24", points: 15, tip: "Kaleng logam bisa dilelehkan berulang kali tanpa kehilangan kualitas — sangat layak didaur ulang." },
+  glass:     { label: "Kaca",      color: "#a78bfa", points: 12, tip: "Bungkus pecahan kaca dengan aman sebelum dibuang untuk menghindari cedera petugas." },
+  kaca:      { label: "Kaca",      color: "#a78bfa", points: 12, tip: "Bungkus pecahan kaca dengan aman sebelum dibuang untuk menghindari cedera petugas." },
+  organic:   { label: "Organik",   color: "#fb923c", points: 5,  tip: "Sisa makanan bisa diolah menjadi kompos untuk menyuburkan tanaman." },
+  organik:   { label: "Organik",   color: "#fb923c", points: 5,  tip: "Sisa makanan bisa diolah menjadi kompos untuk menyuburkan tanaman." },
+  ewaste:    { label: "Elektronik",color: "#f87171", points: 20, tip: "Serahkan limbah elektronik ke drop box resmi, jangan dicampur sampah biasa." },
+  elektronik:{ label: "Elektronik",color: "#f87171", points: 20, tip: "Serahkan limbah elektronik ke drop box resmi, jangan dicampur sampah biasa." },
+  anorganik: { label: "Anorganik", color: "#7dd3fc", points: 10, tip: "Pisahkan sampah anorganik agar dapat diproses di fasilitas daur ulang terdekat." },
+  b3:        { label: "B3 (Limbah Berbahaya)", color: "#ff6b6b", points: 20, tip: "Limbah B3 wajib diserahkan ke titik pengumpulan khusus, jangan dibuang sembarangan." },
 };
-const DEFAULT_INFO = { label: "Tidak Diketahui", color: "#93ab9e", tip: "Kategori belum dikenali sistem. Coba ambil foto yang lebih jelas." };
+const DEFAULT_INFO = { label: "Tidak Diketahui", color: "#93ab9e", points: 3, tip: "Kategori belum dikenali sistem. Coba ambil foto yang lebih jelas." };
 
 /* =========================================================
    AUTH GUARD
@@ -882,11 +880,7 @@ function showResult(data, elapsedMs) {
   const key = (data.category_name || "").toString().toLowerCase().trim();
   const info = CATEGORY_INFO[key] || DEFAULT_INFO;
   const confidencePct = Math.round((data.confidence || 0) * 100);
-
-  // Poin yang DITAMPILKAN untuk scan ini datang langsung dari server
-  // (data.points_earned) — bukan dihitung ulang di frontend, supaya angka
-  // yang muncul selalu cocok dengan apa yang sudah tersimpan di database.
-  const pointsEarned = (typeof data.points_earned === "number") ? data.points_earned : 0;
+  const pointsEarned = (typeof data.points_earned === "number") ? data.points_earned : info.points;
 
   document.getElementById("resultClass").innerText = info.label;
   document.getElementById("resultSwatch").style.background = info.color;
@@ -900,14 +894,10 @@ function showResult(data, elapsedMs) {
   result.classList.add("show");
   panelStatus.innerText = "RECYNT-CAM · selesai";
 
-  // PENTING — sumber kebenaran total poin sekarang SELALU total_points dari
-  // server (hasil query ulang ke DB setelah UPDATE), bukan penjumlahan manual
-  // di localStorage. Kalau server (versi lama) belum mengirim total_points,
-  // fallback ke penjumlahan lokal supaya UI tetap jalan.
-  userData.points = (typeof data.total_points === "number")
-    ? data.total_points
-    : (userData.points || 0) + pointsEarned;
-
+  // Backend detections.js belum mengembalikan total_points, jadi kita
+  // tambahkan pointsEarned ke poin lokal yang sudah ada (points_earned
+  // sendiri sudah resmi dari server, bukan dihitung sepihak di frontend).
+  userData.points = (userData.points || 0) + pointsEarned;
   localStorage.setItem("recynt_user", JSON.stringify(userData));
   document.getElementById("navPoints").innerText = userData.points;
 
