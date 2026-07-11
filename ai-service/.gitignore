@@ -1,65 +1,13 @@
-venv/
 __pycache__/
-model/*.pt
-# =====================================================
-# .gitignore - RECYNT AI (ai-service + backend + frontend)
-# =====================================================
-
-# ---------- SECRETS / ENV (PALING PENTING) ----------
-.env
-.env.local
-.env.*.local
-*.env
-
-# ---------- PYTHON ----------
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
+*.pyc
+*.pyo
+.venv/
 venv/
 env/
-ENV/
-.venv/
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-
-# ---------- MODEL / DATASET (file besar, jangan masuk git) ----------
-# Model bobot bawaan/hasil training - biasanya ratusan MB, sebaiknya
-# di-share terpisah (Google Drive, Roboflow, dsb), bukan lewat git.
-*.pt
-*.onnx
-*.pth
-
-# Dataset hasil download Roboflow / hasil split - jangan ikut di-commit,
-# supaya repo tidak membengkak (bisa ribuan file gambar).
+.env
 dataset/
-Garbage-Classification-*/
-raw_data/
-
-# Hasil training YOLO (grafik, log, weights, dsb)
-runs/
-
-# ---------- NODE / BACKEND ----------
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-package-lock.json.bak
-
-# ---------- OS / EDITOR ----------
+runs/detect/train/*
+!runs/detect/train/weights/
+!runs/detect/train/weights/best.pt
+*.cache
 .DS_Store
-Thumbs.db
-.vscode/
-.idea/
-*.swp
-
-# ---------- LOG ----------
-*.log
-logs/
-
-# ---------- BUILD / CACHE ----------
-dist/
-build/
-.cache/

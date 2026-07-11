@@ -23,9 +23,16 @@ Thumbs.db
 
 # AI Dataset
 ai-service/dataset/
+ai-service/dataset.zip
 ai-service/GARBAGE-CLASSIFICATION-3-2/
 dataset/
+dataset.zip
 GARBAGE-CLASSIFICATION-3-2/
 
-# Model files
+# Model files - ignore semua .pt KECUALI best.pt hasil training
 *.pt
+!ai-service/runs/detect/train/weights/best.pt
+
+# Training artifacts lain (logs, gambar validasi, dst) - selain folder weights
+ai-service/runs/detect/train/*
+!ai-service/runs/detect/train/weights/

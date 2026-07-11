@@ -12,6 +12,11 @@ Setelah folder dibuat, kamu tinggal:
   3. Simpan hasil anotasi (.txt) ke dataset/labels/train dan labels/val
      dengan NAMA FILE SAMA seperti gambarnya (beda ekstensi saja).
      Contoh: images/train/botol001.jpg -> labels/train/botol001.txt
+
+PERBAIKAN dari versi sebelumnya:
+  - Ditambahkan pengecekan apakah data.yaml sudah ada di folder ini,
+    supaya langsung ketahuan kalau file konfigurasinya belum dibuat
+    sebelum kamu capek-capek labeling data.
 """
 
 import os
@@ -22,6 +27,8 @@ FOLDERS = [
     "dataset/labels/train",
     "dataset/labels/val",
 ]
+
+DATA_YAML_PATH = "data.yaml"
 
 
 def main():
@@ -35,7 +42,17 @@ def main():
         print(f"OK  -> {folder}")
 
     print("\nStruktur folder dataset berhasil dibuat.")
-    print("Selanjutnya:")
+
+    if os.path.exists(DATA_YAML_PATH):
+        print(f"OK  -> '{DATA_YAML_PATH}' ditemukan di folder ini.")
+    else:
+        print(
+            f"\nPERINGATAN: '{DATA_YAML_PATH}' belum ditemukan di folder ini.\n"
+            "Buat file data.yaml dulu (berisi path, train, val, nc, names) "
+            "sebelum menjalankan training, kalau tidak 'yolo train' akan error."
+        )
+
+    print("\nSelanjutnya:")
     print("  1. Masukkan foto ke dataset/images/train dan dataset/images/val")
     print("  2. Anotasi dengan LabelImg (format YOLO) -> simpan .txt di dataset/labels/...")
     print("  3. Jalankan: yolo train data=data.yaml model=yolov8n.pt epochs=50")
