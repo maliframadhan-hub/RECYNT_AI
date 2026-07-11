@@ -280,7 +280,7 @@ img { max-width: 100%; display: block; }
   overflow: hidden;
   border: 1px solid var(--border-line);
 }
-video, .cam-frame img {
+video, canvas#canvas, .cam-frame img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -742,6 +742,21 @@ function setMode(m) {
   blob = null;
   scan.disabled = true;
   hideMessages();
+  result.classList.remove("show");
+
+  if (m === "upload") {
+    // Pindah ke mode upload: matikan kamera sepenuhnya biar tidak boros
+    // resource/baterai, dan reset tampilan kamera untuk kunjungan berikutnya.
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+    video.style.display = "block";
+    canvas.style.display = "none";
+    camPlaceholder.style.display = "flex";
+    snap.disabled = true;
+    panelStatus.innerText = "RECYNT-CAM · siap";
+  }
 }
 
 /* =========================================================
@@ -751,6 +766,8 @@ startCam.onclick = async () => {
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
     video.srcObject = stream;
+    video.style.display = "block";
+    canvas.style.display = "none";
     camPlaceholder.style.display = "none";
     snap.disabled = false;
     panelStatus.innerText = "RECYNT-CAM · aktif";
@@ -767,8 +784,13 @@ snap.onclick = () => {
   canvas.toBlob(b => {
     blob = b;
     scan.disabled = false;
-    if (stream) stream.getTracks().forEach(t => t.stop());
+
+    // PENTING: stream KAMERA TIDAK dimatikan di sini — cukup tampilkan hasil
+    // jepretan di atas canvas dan sembunyikan video. Ini yang membuat
+    // "Scan Lagi" bisa langsung menampilkan live feed lagi tanpa perlu
+    // minta izin kamera ulang ke browser.
     video.style.display = "none";
+    canvas.style.display = "block";
     panelStatus.innerText = "RECYNT-CAM · foto diambil";
   }, "image/jpeg", 0.92);
 };
@@ -788,6 +810,10 @@ drop.ondrop = (e) => {
 
 file.onchange = (e) => {
   if (e.target.files.length) handleFile(e.target.files[0]);
+  // Reset value input SETELAH file dibaca, supaya memilih file dengan nama
+  // yang sama persis (misal re-upload gambar test yang sama) tetap memicu
+  // event 'change' lagi di kesempatan berikutnya, dan preview selalu update.
+  e.target.value = "";
 };
 
 function handleFile(f) {
@@ -879,17 +905,30 @@ document.getElementById("scanAgain").onclick = () => {
   blob = null;
   scan.disabled = true;
   hideMessages();
+
   if (mode === "upload") {
+    file.value = "";
     drop.classList.remove("has-image");
     drop.innerHTML = `
       <svg class="drop-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <div>Klik atau seret gambar ke sini</div>
       <small>JPG, PNG — maks 10MB</small>`;
   } else {
+    // Kamera: stream masih hidup (tidak pernah di-stop saat snap), jadi
+    // cukup tampilkan lagi live feed-nya tanpa perlu minta izin ulang.
+    canvas.style.display = "none";
     video.style.display = "block";
-    camPlaceholder.style.display = "flex";
-    snap.disabled = true;
-    panelStatus.innerText = "RECYNT-CAM · siap";
+
+    if (stream && stream.active) {
+      camPlaceholder.style.display = "none";
+      snap.disabled = false;
+      panelStatus.innerText = "RECYNT-CAM · aktif";
+    } else {
+      // Jaga-jaga kalau stream sempat terputus (misal tab di-background lama)
+      camPlaceholder.style.display = "flex";
+      snap.disabled = true;
+      panelStatus.innerText = "RECYNT-CAM · siap";
+    }
   }
 };
 
@@ -901,6 +940,14 @@ function hideMessages() {
   error.classList.remove("show");
   error.innerText = "";
 }
+
+/* =========================================================
+   Matikan kamera saat pengguna meninggalkan halaman, agar
+   lampu indikator kamera tidak menyala terus di background.
+========================================================= */
+window.addEventListener("beforeunload", () => {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+});
 
 /* =========================================================
    Real-time clock & date (sinkron dengan index.html)
