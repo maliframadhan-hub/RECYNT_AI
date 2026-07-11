@@ -23,5 +23,6 @@ COPY . .
 ENV PORT=8000
 EXPOSE 8000
 
-# Gunakan shell form agar variabel $PORT dari platform hosting terbaca
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT}
+# JSON-form + shell eksplisit, agar variabel $PORT tetap terbaca
+# sekaligus menghindari warning JSONArgsRecommended dari Docker.
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
