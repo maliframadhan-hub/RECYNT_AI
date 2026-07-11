@@ -669,9 +669,9 @@ footer .container { max-width: 1240px; }
    KONFIGURASI
 ========================================================= */
 // Panggil backend Node.js (bukan AI service langsung), agar poin & riwayat
-// scan tersimpan ke database. Ganti URL ini dengan domain Railway backend kamu.
+// scan tersimpan ke database. Ganti API_BASE dengan domain Railway backend kamu.
 const API_BASE = "https://GANTI-DENGAN-DOMAIN-BACKEND-NODEJS.up.railway.app";
-const SCAN_API = `${API_BASE}/api/scan`;
+const SCAN_API = `${API_BASE}/api/detections`;
 
 // Info tampilan & poin per kategori. Cocok dengan CATEGORY_MAP di main.py
 // (organik/anorganik/B3) maupun kategori marketing (plastik/kertas/dll)
@@ -853,10 +853,11 @@ scan.onclick = async () => {
       body: form,
     });
 
-    const data = await res.json().catch(() => ({}));
+    const payload = await res.json().catch(() => ({}));
 
-    if (!res.ok || !data.success) {
-      throw new Error(data.message || "Backend merespon dengan error.");
+    if (!res.ok || !payload.success) {
+      // Termasuk kasus 422 "objek tidak terdeteksi" dari backend
+      throw new Error(payload.message || "Server merespon dengan error.");
     }
 
     const elapsedMs = Math.round(performance.now() - startedAt);
@@ -865,12 +866,7 @@ scan.onclick = async () => {
     scanLine.classList.remove("active");
     scan.disabled = false;
 
-    if (!data.detected) {
-      showError(data.message || "Tidak ada objek sampah yang terdeteksi. Coba foto ulang dengan pencahayaan lebih baik.");
-      return;
-    }
-
-    showResult(data, elapsedMs);
+    showResult(payload.data, elapsedMs);
 
   } catch (e) {
     loading.classList.remove("show");
@@ -898,11 +894,10 @@ function showResult(data, elapsedMs) {
   result.classList.add("show");
   panelStatus.innerText = "RECYNT-CAM · selesai";
 
-  // Poin resmi datang dari database (backend), bukan dihitung manual di
-  // frontend, supaya selalu konsisten dengan histori di tabel `detections`.
-  userData.points = (typeof data.total_points === "number")
-    ? data.total_points
-    : (userData.points || 0) + pointsEarned;
+  // Backend detections.js belum mengembalikan total_points, jadi kita
+  // tambahkan pointsEarned ke poin lokal yang sudah ada (points_earned
+  // sendiri sudah resmi dari server, bukan dihitung sepihak di frontend).
+  userData.points = (userData.points || 0) + pointsEarned;
   localStorage.setItem("recynt_user", JSON.stringify(userData));
   document.getElementById("navPoints").innerText = userData.points;
 
